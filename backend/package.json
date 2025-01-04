@@ -1,0 +1,18 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "An LLM Prompt Engineering event where people put system prompts and user prompts head-to-head!",
+  "main": "./build/app.js",
+  "scripts": {
+    "buildDev": "tsc --sourcemap",
+    "build": "tsc",
+    "dev": "node ./build/app.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.0",
+    "express": "^4.21.2"
+  }
+}
