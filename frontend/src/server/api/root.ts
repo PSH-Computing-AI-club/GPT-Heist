@@ -1,8 +1,8 @@
-// import { postRouter } from "~/server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { promptRouter } from "~/server/api/routers/prompts";
 
 export const appRouter = createTRPCRouter({
-  // post: postRouter,
+  prompts: promptRouter
 });
 
 // export type definition of API
