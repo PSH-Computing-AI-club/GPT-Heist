@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  latestSystemPromptId Int
+  latestUserPromptId   Int
+
+  allSystemPrompts SystemPrompt[]
+  allUserPrompts   UserPrompt[]
+
+  @@map("users")
+}
+
+model SystemPrompt { //Should have probably just used a single Prompt table... oh well
+  id     Int    @id @default(autoincrement())
+  prompt String
+
+  userId     Int
+  User       User         @relation(fields: [userId], references: [id])
+  ChatResult ChatResult[]
+
+  @@map("systemPrompts")
+}
+
+model UserPrompt {
+  id     Int    @id @default(autoincrement())
+  prompt String
+
+  userId     Int
+  User       User         @relation(fields: [userId], references: [id])
+  ChatResult ChatResult[]
+
+  @@map("userPrompts")
+}
+
+model ChatResult {
+  id           Int          @id @default(autoincrement())
+  systemPrompt SystemPrompt @relation(fields: [systemPromptId], references: [id])
+  userPrompt   UserPrompt   @relation(fields: [userPromptId], references: [id])
+  results      String
+
+  systemPromptId Int
+  userPromptId   Int
+
+  @@map("chatResults")
+}
