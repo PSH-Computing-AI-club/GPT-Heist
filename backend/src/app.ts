@@ -1,35 +1,13 @@
-import OpenAI from "openai";
-import { getLatest } from "./dataFetcher";
-
-const client = new OpenAI({
-    baseURL: "http://localhost:8080",
-    apiKey: ""
-})
+import { getLatest, getNextPrompts } from "./promptFetcher"
+import { ChatWorker } from "./worker"
 
 
 async function main() {
-    // const stream = await client.chat.completions.create({
-    //     model: "llama-3.2-3b-instruct:q4_k_m",
-    //     messages: [{role: "user", content: "Provide a detailed apple pie recipe"}],
-    //     stream: true
-    // })
-
-    // for await (const chunk of stream) {
-    //     process.stdout.write(chunk.choices[0]?.delta?.content || "")
-    // }
-
-    getLatest()
+    let worker = new ChatWorker({baseURL: "http://localhost:3333"})
+    await getLatest()
+    for(let i=0; i < 100; i++){
+        await worker.doChat(getNextPrompts())
+    }
 }
 
 main()
-
-
-//New user
-    //take in new user prompts
-    //take in new system prompts
-//Worker
-    //spread out workload to available runners
-    //save results
-//Stats
-    //See latest events
-    //Worker usage
