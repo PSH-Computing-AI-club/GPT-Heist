@@ -1,6 +1,5 @@
 import { type Prisma } from "@prisma/client"
-import { PrismaClient } from "@prisma/client"
-const db = new PrismaClient()
+import { db } from "./db" //Prisma client
 
 const promptCache: Map<number, Prisma.UserPromptUncheckedCreateInput | Prisma.SystemPromptUncheckedCreateInput> = new Map()
 let systemPrompts: number[] = []
