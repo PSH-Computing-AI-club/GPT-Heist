@@ -1,7 +1,7 @@
 import { type Prisma } from "@prisma/client"
 import { db } from "./db" //Prisma client
 
-const promptCache: Map<number, Prisma.UserPromptUncheckedCreateInput | Prisma.SystemPromptUncheckedCreateInput> = new Map()
+const promptCache: Map<number, Prisma.PromptUncheckedCreateInput> = new Map()
 let systemPrompts: number[] = []
 let userPrompts: number[] = []
 
@@ -36,7 +36,7 @@ export async function getLatest(){
     //Fetch new prompts as needed
     for(const id of systemPrompts){
         if(!promptCache.has(id)){
-            const fetchedPrompt = await db.systemPrompt.findFirst({ where: {id: id} })
+            const fetchedPrompt = await db.prompt.findFirst({ where: {id: id} })
             if(fetchedPrompt){
                 promptCache.set(id, fetchedPrompt)
             } else {
@@ -46,7 +46,7 @@ export async function getLatest(){
     }
     for(const id of userPrompts){
         if(!promptCache.has(id)){
-            const fetchedPrompt = await db.userPrompt.findFirst({ where: {id: id} })
+            const fetchedPrompt = await db.prompt.findFirst({ where: {id: id} })
             if(fetchedPrompt){
                 promptCache.set(id, fetchedPrompt)
             } else {
@@ -85,15 +85,15 @@ export async function getLatest(){
     so much explanation for a few lines of code, lol
 */
 
-type PromptPair = { userPrompt: Prisma.UserPromptUncheckedCreateInput, systemPrompt: Prisma.SystemPromptUncheckedCreateInput }
+type PromptPair = { userPrompt: Prisma.PromptUncheckedCreateInput, systemPrompt: Prisma.PromptUncheckedCreateInput }
 let nextPromptState = { index: 0, offset: 0 }
 /**
  * An iterator-like function that returns the next combination of prompts
  * @returns `NextPrompts: {userPrompt: prompt, systemPrompt: prompt}`
  */
 export function getNextPrompts(): PromptPair {
-    const nextSystemPrompt = promptCache.get(systemPrompts[nextPromptState.index]) as Prisma.SystemPromptUncheckedCreateInput
-    const nextUserPrompt = promptCache.get(userPrompts[(nextPromptState.index + nextPromptState.offset) % userPrompts.length]) as Prisma.UserPromptUncheckedCreateInput
+    const nextSystemPrompt = promptCache.get(systemPrompts[nextPromptState.index]) as Prisma.PromptUncheckedCreateInput
+    const nextUserPrompt = promptCache.get(userPrompts[(nextPromptState.index + nextPromptState.offset) % userPrompts.length]) as Prisma.PromptUncheckedCreateInput
 
     nextPromptState.index = (nextPromptState.index + 1) % systemPrompts.length
     if(nextPromptState.index == 0){

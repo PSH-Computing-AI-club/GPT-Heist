@@ -2,7 +2,7 @@ import { type ClientOptions, OpenAI as OpenAIClient } from "openai"
 import { type Prisma } from "@prisma/client"
 import OpenAI from "openai";
 
-type PromptPair = { userPrompt: Prisma.UserPromptUncheckedCreateInput, systemPrompt: Prisma.SystemPromptUncheckedCreateInput }
+type PromptPair = { userPrompt: Prisma.PromptUncheckedCreateInput, systemPrompt: Prisma.PromptUncheckedCreateInput }
 
 
 /**

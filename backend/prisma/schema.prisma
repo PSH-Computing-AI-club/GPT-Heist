@@ -13,42 +13,34 @@ model User {
   latestSystemPromptId Int
   latestUserPromptId   Int
 
-  allSystemPrompts SystemPrompt[]
-  allUserPrompts   UserPrompt[]
+  allPrompts Prompt[]
 
   @@map("users")
 }
 
-model SystemPrompt { //Should have probably just used a single Prompt table... oh well
-  id     Int    @id @default(autoincrement())
-  prompt String
-
-  userId     Int
-  User       User         @relation(fields: [userId], references: [id])
-  ChatResult ChatResult[]
-
-  @@map("systemPrompts")
+enum PromptType {
+  USER
+  SYSTEM
 }
 
-model UserPrompt {
-  id     Int    @id @default(autoincrement())
+model Prompt {
+  id     Int        @id @default(autoincrement())
   prompt String
+  type   PromptType
 
-  userId     Int
-  User       User         @relation(fields: [userId], references: [id])
-  ChatResult ChatResult[]
+  userId Int
+  User   User @relation(fields: [userId], references: [id])
 
-  @@map("userPrompts")
+  chatResultId Int?
+  chatResult   ChatResult? @relation(fields: [chatResultId], references: [id])
+
+  @@map("prompts")
 }
 
 model ChatResult {
-  id           Int          @id @default(autoincrement())
-  systemPrompt SystemPrompt @relation(fields: [systemPromptId], references: [id])
-  userPrompt   UserPrompt   @relation(fields: [userPromptId], references: [id])
-  results      String
-
-  systemPromptId Int
-  userPromptId   Int
+  id      Int      @id @default(autoincrement())
+  results String
+  prompts Prompt[]
 
   @@map("chatResults")
 }
