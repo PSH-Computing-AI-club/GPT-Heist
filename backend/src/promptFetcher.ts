@@ -2,8 +2,12 @@ import { type Prisma } from "@prisma/client"
 import { db } from "./db" //Prisma client
 
 const promptCache: Map<number, Prisma.PromptUncheckedCreateInput> = new Map()
+const resultCache: Map<{systemPromptId: number, userPromptId: number}, number> = new Map()
 let systemPrompts: number[] = []
 let userPrompts: number[] = []
+
+let CACHE_CLEANUP_DELAY = 20 //How many times getLatest() will run before the cache maps get cleaned up
+let cacheCleanupCounter = 0
 
 /**
  * Fetches all user's latest prompts, fetches any prompts not in promptCache, and cleans up unused prompts in promptCache
@@ -55,12 +59,25 @@ export async function getLatest(){
         }
     }
 
-    //Clean up the cache. (Could have been run once every X function calls... but it really doesn't matter)
-    for(const key of promptCache.keys()){
-        if(!systemPrompts.includes(key) && !userPrompts.includes(key)){
-            promptCache.delete(key)
+    //Clean up the cache.
+    cacheCleanupCounter++
+    if(cacheCleanupCounter >= CACHE_CLEANUP_DELAY){
+        for(const key of promptCache.keys()){
+            if(!systemPrompts.includes(key) && !userPrompts.includes(key)){
+                promptCache.delete(key)
+            }
+        }
+        for(const key of resultCache.keys()){
+            if(!systemPrompts.includes(key.systemPromptId) || !userPrompts.includes(key.userPromptId)){
+                resultCache.delete(key)
+            }
         }
     }
+}
+
+
+export function saveChatResultId(systemPromptId: number, userPromptId: number, resultId: number){
+    resultCache.set({systemPromptId: systemPromptId, userPromptId: userPromptId}, resultId)
 }
 
 /*
