@@ -1,7 +1,7 @@
 import { type ChatCompletion } from "openai/resources"
 import { ChatWorker } from "./worker"
 import { db } from "./db" //Prisma client
-import { getLatest, getNextPrompts } from "./promptFetcher"
+import { getLatest, getNextPrompts, saveChatResultId } from "./promptFetcher"
 
 let workers: ChatWorker[] = []
 
@@ -16,24 +16,26 @@ async function runScheduler(){
             continue
         }
 
-        worker.doChat(getNextPrompts()).then(handleChatCompletion)
+        const nextPromptPair = getNextPrompts()
+        if(!nextPromptPair){
+            return
+        }
+
+        worker.doChat(nextPromptPair).then(handleChatCompletion)
     }
 }
 
-async function handleChatCompletion(chatCompletion: ChatCompletion){
+async function handleChatCompletion({userPromptId, systemPromptId, chatCompletion}: {userPromptId: number, systemPromptId: number, chatCompletion: ChatCompletion}){
     if(chatCompletion.choices.length == 0 || !chatCompletion.choices[0].message.content){
         console.warn("⚠️ chatCompletion returned with no message content")
         console.warn(chatCompletion.choices.length == 0 ? chatCompletion : chatCompletion.choices[0].message)
         return
     }
 
-    db.chatResult.create({
-        data: {
-            results: chatCompletion.choices[0].message.content,
-        }
+    const newChatResult = await db.chatResult.create({
+        data: { results: chatCompletion.choices[0].message.content }
     })
-    //left off: update the user and system prompt's result fields after creation
-    //and something else in runscheduler()
+    saveChatResultId(systemPromptId, userPromptId, newChatResult.id)
 }
 
 async function main() {

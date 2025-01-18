@@ -75,8 +75,20 @@ export async function getLatest(){
     }
 }
 
-
+/**
+ * Saves the result id to the system and user prompts. Also marks the prompt pair as complete in a cache.
+ * Note: The scheduling algorithm does *not* look at the database and uses an internal map to determine if a result exists
+ */
 export function saveChatResultId(systemPromptId: number, userPromptId: number, resultId: number){
+    db.prompt.update({
+        where: { id: userPromptId },
+        data: { chatResultId: resultId }
+    })
+    db.prompt.update({
+        where: { id: systemPromptId },
+        data: { chatResultId: resultId }
+    })
+
     resultCache.set({systemPromptId: systemPromptId, userPromptId: userPromptId}, resultId)
 }
 
@@ -106,16 +118,36 @@ type PromptPair = { userPrompt: Prisma.PromptUncheckedCreateInput, systemPrompt:
 let nextPromptState = { index: 0, offset: 0 }
 /**
  * An iterator-like function that returns the next combination of prompts
- * @returns `NextPrompts: {userPrompt: prompt, systemPrompt: prompt}`
+ * @returns `PromptPair: {userPrompt: prompt, systemPrompt: prompt} OR null if no prompts are available`
  */
-export function getNextPrompts(): PromptPair {
-    const nextSystemPrompt = promptCache.get(systemPrompts[nextPromptState.index]) as Prisma.PromptUncheckedCreateInput
-    const nextUserPrompt = promptCache.get(userPrompts[(nextPromptState.index + nextPromptState.offset) % userPrompts.length]) as Prisma.PromptUncheckedCreateInput
-
-    nextPromptState.index = (nextPromptState.index + 1) % systemPrompts.length
-    if(nextPromptState.index == 0){
-        nextPromptState.offset = (nextPromptState.offset + 1) % userPrompts.length
+export function getNextPrompts(): PromptPair | null {
+    if(systemPrompts.length < 1 || userPrompts.length < 1){
+        return null
     }
 
-    return { systemPrompt: nextSystemPrompt, userPrompt: nextUserPrompt }
+    const startPromptState = structuredClone(nextPromptState) //Keep track if we looped back to the start or not
+    let nextPromptPair: PromptPair | null = null
+
+    //Loop through all system+user prompt combinations at least once to find one without (cached) results
+    do {
+        const systemPromptIndex = nextPromptState.index
+        const userPromptIndex = (nextPromptState.index + nextPromptState.offset) % userPrompts.length
+
+        //nudge the state for next time
+        nextPromptState.index = (nextPromptState.index + 1) % systemPrompts.length
+        if(nextPromptState.index == 0){
+            nextPromptState.offset = (nextPromptState.offset + 1) % userPrompts.length
+        }
+
+        //get our prompts if it doesn't have a (cached) result yet
+        if(!resultCache.get({systemPromptId: systemPrompts[systemPromptIndex], userPromptId: userPrompts[userPromptIndex]})){
+            return nextPromptPair = {
+                userPrompt: promptCache.get(systemPrompts[systemPromptIndex]) as Prisma.PromptUncheckedCreateInput,
+                systemPrompt: promptCache.get(userPrompts[userPromptIndex]) as Prisma.PromptUncheckedCreateInput
+            }
+        }
+    } while(nextPromptState.index != startPromptState.index && nextPromptState.offset != startPromptState.offset)
+
+
+    return null
 }

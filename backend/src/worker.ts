@@ -1,4 +1,5 @@
 import { type ClientOptions, OpenAI as OpenAIClient } from "openai"
+import { type ChatCompletion } from "openai/resources"
 import { type Prisma } from "@prisma/client"
 import OpenAI from "openai";
 
@@ -18,7 +19,7 @@ export class ChatWorker {
         this.busy = false
     }
 
-    async doChat(prompts: PromptPair){
+    async doChat(prompts: PromptPair): Promise<{userPromptId: number, systemPromptId: number, chatCompletion: ChatCompletion}> {
         this.busy = true
         console.log(`✨▶️ System-User IDs: ${prompts.systemPrompt.id}-${prompts.userPrompt.id}; System: ${prompts.systemPrompt.prompt}; User:${prompts.userPrompt.prompt}`)
         const stopwatch = Date.now()
@@ -37,7 +38,7 @@ export class ChatWorker {
         console.log(`✨✔️ System-User IDs: ${prompts.systemPrompt.id}-${prompts.userPrompt.id}; ${tokensPerSec} Tokens/sec for ${timeTaken} ms`)
         this.busy = false
 
-        return result
+        return {userPromptId: 1, systemPromptId: 1, chatCompletion: result}
     }
 }
 
